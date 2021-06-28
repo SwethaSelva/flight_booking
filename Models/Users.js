@@ -29,4 +29,9 @@ let user = new mongoose.Schema({
   }
 });
 
+user.pre('save', async function (next) {
+  this.password = await bcrypt.genPasswordHash(this.password);
+  next();
+});
+
 module.exports = mongoose.model('User', user);
