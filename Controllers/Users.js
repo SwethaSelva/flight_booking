@@ -1,7 +1,8 @@
-let jwt = require('../Utilis/Authenticate');
-let bcrypt = require('../Utilis/Bcrypt');
-
 let userModel = require('../Models/User');
+let bookingModel = require('../Models/Booking');
+let flightModel = require('../Models/Flight');
+let jwt = require('../Utilis/Authentication');
+let bcrypt = require('../Utilis/Bcrypt');
 
 let errHandler = function (err, req, res, next) {
   let error = {
@@ -55,8 +56,62 @@ let signup = async function(req, res, next) {
   }
 };
 
+let getBookings = async function(req, res, next) {
+  let { userData } = req.body;
+  if (userData.admin)
+    res.status(401).send({ message: 'You are not the user', statusCode: 401 });
+  try {
+    let bookings = await bookingModel.find({ user: userData._id }, {}, { lean: true });
+    res.send(bookings);
+  } catch (error) {
+    next(error);
+  }
+};
+
+let bookFlight = async function(req, res, next) {
+  let { userData, flight_ids, from_date, to_date, seats } = req.body;
+  try {
+    if (typeof flight_ids !== 'array' || !flight_ids.length) next({ statusCode: 400, message: 'Bad request'});
+    if (userData.admin)
+      res.status(401).send({ message: 'You are not the user', statusCode: 401 });
+
+    let flights = await flightModel.find({ _id: { $in: flight_ids } }, {}, { lean: true }) || [];
+    if (flights.length < flight_ids.length) throw { statusCode: 404, message: 'Few flights are not found. Check the ids' };
+
+    let newDocs = [];
+    let bulkUpdFlights = [];
+    for (let flight of flights) {
+      let newDoc = {
+        user: userData._id,
+        flight: flight._id,
+        seat_no: flight.total_avail_seats,
+        price: flight.price,
+        from: flight.origin,
+        to: flight.destination,
+        from_date,
+        to_date,
+        pnr: `${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+      };
+      bulkUpdFlights.push({
+        updateOne: {
+          filter: { _id: flight._id },
+          update: { $inc: { total_avail_seats: -seats } },
+        }
+      })
+      newDocs.push(newDoc);
+    }
+    let bookings = await bookingModel.insertMany(newDocs);
+    let flightDocs = await flightModel.bulkWrite(bulkUpdFlights);
+    console.log({ flightDocs });
+    res.send(bookings);
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   login,
   signup,
+  getBookings,
+  bookFlight,
   errHandler,
 };
