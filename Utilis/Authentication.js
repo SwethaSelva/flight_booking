@@ -1,5 +1,5 @@
 let jwt = require('jsonwebtoken');
-let userModel = require('../Models/User');
+let userModel = require('../Models/Users');
 let appConstants = require('../Utilis/AppConstants');
 
 let createToken = (id, admin) => {

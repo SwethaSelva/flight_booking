@@ -1,5 +1,5 @@
 let route = require('express').Router();
-let userController = require('../Controllers/User');
+let userController = require('../Controllers/Users');
 let auth = require('../Utilis/Authentication');
 
 route.get('/login', userController.login);

@@ -1,6 +1,6 @@
-let userModel = require('../Models/User');
-let bookingModel = require('../Models/Booking');
-let flightModel = require('../Models/Flight');
+let userModel = require('../Models/Users');
+let bookingModel = require('../Models/Bookings');
+let flightModel = require('../Models/Flights');
 let jwt = require('../Utilis/Authentication');
 let bcrypt = require('../Utilis/Bcrypt');
 
